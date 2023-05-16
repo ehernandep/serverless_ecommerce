@@ -8,15 +8,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Payment = exports.Cart = exports.Profile = exports.Verify = exports.Login = exports.Signup = void 0;
 const userService_1 = require("../service/userService");
 const response_1 = require("../utility/response");
-const service = new userService_1.UserService();
-const Signup = (event) => __awaiter(void 0, void 0, void 0, function* () {
+const core_1 = __importDefault(require("@middy/core"));
+const http_json_body_parser_1 = __importDefault(require("@middy/http-json-body-parser"));
+const tsyringe_1 = require("tsyringe");
+const service = tsyringe_1.container.resolve(userService_1.UserService);
+exports.Signup = (0, core_1.default)((event) => {
     return service.CreateUser(event);
-});
-exports.Signup = Signup;
+}).use((0, http_json_body_parser_1.default)());
 const Login = (event) => __awaiter(void 0, void 0, void 0, function* () {
     return service.UserLogin(event);
 });
