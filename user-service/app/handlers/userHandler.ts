@@ -1,27 +1,27 @@
-import { UserService } from "app/service/userService";
-import { ErrorResponse } from "app/utility/response";
+import { UserService } from "../service/userService";
+import { ErrorResponse } from "../utility/response";
 import { APIGatewayProxyEventV2 } from "aws-lambda";
 
 const service = new UserService();
 
 export const Signup = async (event: APIGatewayProxyEventV2) => {
-  console.log(event);
+
 
   return service.CreateUser(event);
 };
 
 export const Login = async (event: APIGatewayProxyEventV2) => {
-  console.log(event);
+
   return service.UserLogin(event);
 };
 
 export const Verify = async (event: APIGatewayProxyEventV2) => {
-  console.log(event);
+
   return service.VerifyUser(event);
 };
 
 export const Profile = async (event: APIGatewayProxyEventV2) => {
-  const httpMethod = event.requestContext.http.method;
+  const httpMethod = event.requestContext.http.method.toLowerCase();
   if (httpMethod === "post") {
     return service.CreateProfile(event);
   } else if (httpMethod === "put") {
@@ -34,19 +34,27 @@ export const Profile = async (event: APIGatewayProxyEventV2) => {
 };
 
 export const Cart = async (event: APIGatewayProxyEventV2) => {
-    const httpMethod = event.requestContext.http.method;
+  const httpMethod = event.requestContext.http.method.toLowerCase();
   if (httpMethod === "post") {
-    return service.CreateProfile(event);
+    return service.CreateCart(event);
   } else if (httpMethod === "put") {
-    return service.EditProfile(event);
+    return service.UpdateCart(event);
   } else if (httpMethod === "get") {
-    return service.GetProfile(event);
+    return service.GetCart(event);
   } else {
     return ErrorResponse(404, "requested method is not supported");
   }
 };
 
 export const Payment = async (event: APIGatewayProxyEventV2) => {
-  console.log(event);
-  return service.CreateUser(event);
+  const httpMethod = event.requestContext.http.method.toLowerCase();
+  if (httpMethod === "post") {
+    return service.CreatePaymentMethod(event);
+  } else if (httpMethod === "put") {
+    return service.UpdatePaymentMethod(event);
+  } else if (httpMethod === "get") {
+    return service.GetPaymentMethod(event);
+  } else {
+    return ErrorResponse(404, "requested method is not supported");
+  }
 };

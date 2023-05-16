@@ -1,14 +1,10 @@
 import { APIGatewayProxyEventV2 } from "aws-lambda";
-import { SucessResponse, ErrorResponse } from "app/utility/response";
+import { SucessResponse, ErrorResponse } from "../utility/response";
 export class UserService {
   constructor() {}
   // User creation, validation & login
   async CreateUser(event: APIGatewayProxyEventV2) {
-    return {
-      statusCode: 200,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ message: "Response", data: {} }),
-    };
+    return SucessResponse({ message: "response from create User" });
   }
 
   async UserLogin(event: APIGatewayProxyEventV2) {
