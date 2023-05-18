@@ -4,7 +4,8 @@
   "description": "<!-- title: 'AWS NodeJS Example' description: 'This template demonstrates how to deploy a NodeJS function running on AWS Lambda using the traditional Serverless Framework.' layout: Doc framework: v3 platform: AWS language: nodeJS priority: 1 authorLink: 'https://github.com/serverless' authorName: 'Serverless, inc.' authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4' -->",
   "main": "index.js",
   "scripts": {
-    "dev": "serverless offline"
+    "dev": "serverless offline",
+    "deploy": "sls deploy --verbose"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +18,11 @@
     "@middy/core": "^4.4.2",
     "@middy/http-json-body-parser": "^4.4.2",
     "@types/aws-lambda": "^8.10.115",
+    "@types/bcrypt": "^5.0.0",
     "aws-lambda": "^1.0.7",
+    "bcrypt": "^5.1.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0",
     "reflect-metadata": "^0.1.13",
     "ts-node": "^10.9.1",
     "tsyringe": "^4.7.0",

@@ -22,6 +22,9 @@ exports.UserService = void 0;
 const userRepository_1 = require("../repository/userRepository");
 const response_1 = require("../utility/response");
 const tsyringe_1 = require("tsyringe");
+const SignUpInput_1 = require("../models/dto/SignUpInput");
+const class_transformer_1 = require("class-transformer");
+const errors_1 = require("../utility/errors");
 let UserService = class UserService {
     constructor(repository) {
         this.repository = repository;
@@ -29,7 +32,12 @@ let UserService = class UserService {
     // User creation, validation & login
     CreateUser(event) {
         return __awaiter(this, void 0, void 0, function* () {
-            return (0, response_1.SucessResponse)({ message: "response from create User" });
+            const input = (0, class_transformer_1.plainToClass)(SignUpInput_1.SignupInput, event.body);
+            const error = yield (0, errors_1.AppValidationError)(input);
+            if (error) {
+                return (0, response_1.ErrorResponse)(404, error);
+            }
+            return (0, response_1.SucessResponse)(input);
         });
     }
     UserLogin(event) {
