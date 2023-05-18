@@ -10,8 +10,13 @@ import {
   GetSalt,
   GetToken,
   ValidatePassword,
+  VerifyToken,
 } from "../utility/password";
 import { LoginInput } from "../models/dto/LoginInput";
+import {
+  GenerateAccessCode,
+  SendVerificationCode,
+} from "../utility/notification";
 @autoInjectable()
 export class UserService {
   repository: UserRepository;
@@ -66,7 +71,15 @@ export class UserService {
     }
   }
   async GetVerificationToken(event: APIGatewayProxyEventV2) {
-    return SucessResponse({ message: "response from Verify User" });
+    const token = event.headers.authorization;
+    const payload = await VerifyToken(token);
+    if (payload) {
+      const { code, expiry } = GenerateAccessCode();
+      const response = await SendVerificationCode(code, payload.phone);
+      return SucessResponse({
+        message: "verification code is sent to your registered mobile number",
+      });
+    }
   }
   async VerifyUser(event: APIGatewayProxyEventV2) {
     return SucessResponse({ message: "response from Verify User" });

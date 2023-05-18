@@ -27,6 +27,7 @@ const class_transformer_1 = require("class-transformer");
 const errors_1 = require("../utility/errors");
 const password_1 = require("../utility/password");
 const LoginInput_1 = require("../models/dto/LoginInput");
+const notification_1 = require("../utility/notification");
 let UserService = class UserService {
     constructor(repository) {
         this.repository = repository;
@@ -81,7 +82,15 @@ let UserService = class UserService {
     }
     GetVerificationToken(event) {
         return __awaiter(this, void 0, void 0, function* () {
-            return (0, response_1.SucessResponse)({ message: "response from Verify User" });
+            const token = event.headers.authorization;
+            const payload = yield (0, password_1.VerifyToken)(token);
+            if (payload) {
+                const { code, expiry } = (0, notification_1.GenerateAccessCode)();
+                const response = yield (0, notification_1.SendVerificationCode)(code, payload.phone);
+                return (0, response_1.SucessResponse)({
+                    message: "verification code is sent to your registered mobile number",
+                });
+            }
         });
     }
     VerifyUser(event) {
