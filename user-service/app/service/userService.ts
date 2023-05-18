@@ -5,7 +5,13 @@ import { autoInjectable } from "tsyringe";
 import { SignupInput } from "../models/dto/SignUpInput";
 import { plainToClass } from "class-transformer";
 import { AppValidationError } from "../utility/errors";
-import { GetHashedPassword, GetSalt } from "../utility/password";
+import {
+  GetHashedPassword,
+  GetSalt,
+  GetToken,
+  ValidatePassword,
+} from "../utility/password";
+import { LoginInput } from "../models/dto/LoginInput";
 @autoInjectable()
 export class UserService {
   repository: UserRepository;
@@ -14,27 +20,54 @@ export class UserService {
   }
   // User creation, validation & login
   async CreateUser(event: APIGatewayProxyEventV2) {
-    const input = plainToClass(SignupInput, event.body);
-    const error = await AppValidationError(input);
-    if (error) {
-      return ErrorResponse(404, error);
+    try {
+      const input = plainToClass(SignupInput, event.body);
+      const error = await AppValidationError(input);
+      if (error) {
+        return ErrorResponse(404, error);
+      }
+      const salt = await GetSalt();
+      const hashedPassword = await GetHashedPassword(input.password, salt);
+      const data = await this.repository.createAccount({
+        email: input.email,
+        password: hashedPassword,
+        phone: input.phone,
+        userType: "BUYER",
+        salt: salt,
+      });
+      return SucessResponse(data);
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
     }
-    const salt = await GetSalt();
-    const hashedPassword = await GetHashedPassword();
-    const data = await this.repository.createAccount({
-      email: input.email,
-      password: hashedPassword,
-      phone: input.phone,
-      userType: "BUYER",
-      salt: salt,
-    });
-    return SucessResponse(input);
   }
 
   async UserLogin(event: APIGatewayProxyEventV2) {
-    return SucessResponse({ message: "response from User Login" });
+    try {
+      const input = plainToClass(LoginInput, event.body);
+      const error = await AppValidationError(input);
+      if (error) {
+        return ErrorResponse(404, error);
+      }
+      const data = await this.repository.findAccount(input.email);
+      const verified = await ValidatePassword(
+        input.password,
+        data.password,
+        data.salt
+      );
+      if (!verified) {
+        throw new Error("password does not match");
+      }
+      const token = GetToken(data);
+      return SucessResponse({ token });
+    } catch (error) {
+      console.log(error);
+      return ErrorResponse(500, error);
+    }
   }
-
+  async GetVerificationToken(event: APIGatewayProxyEventV2) {
+    return SucessResponse({ message: "response from Verify User" });
+  }
   async VerifyUser(event: APIGatewayProxyEventV2) {
     return SucessResponse({ message: "response from Verify User" });
   }

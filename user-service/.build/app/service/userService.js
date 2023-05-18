@@ -25,6 +25,8 @@ const tsyringe_1 = require("tsyringe");
 const SignUpInput_1 = require("../models/dto/SignUpInput");
 const class_transformer_1 = require("class-transformer");
 const errors_1 = require("../utility/errors");
+const password_1 = require("../utility/password");
+const LoginInput_1 = require("../models/dto/LoginInput");
 let UserService = class UserService {
     constructor(repository) {
         this.repository = repository;
@@ -32,17 +34,54 @@ let UserService = class UserService {
     // User creation, validation & login
     CreateUser(event) {
         return __awaiter(this, void 0, void 0, function* () {
-            const input = (0, class_transformer_1.plainToClass)(SignUpInput_1.SignupInput, event.body);
-            const error = yield (0, errors_1.AppValidationError)(input);
-            if (error) {
-                return (0, response_1.ErrorResponse)(404, error);
+            try {
+                const input = (0, class_transformer_1.plainToClass)(SignUpInput_1.SignupInput, event.body);
+                const error = yield (0, errors_1.AppValidationError)(input);
+                if (error) {
+                    return (0, response_1.ErrorResponse)(404, error);
+                }
+                const salt = yield (0, password_1.GetSalt)();
+                const hashedPassword = yield (0, password_1.GetHashedPassword)(input.password, salt);
+                const data = yield this.repository.createAccount({
+                    email: input.email,
+                    password: hashedPassword,
+                    phone: input.phone,
+                    userType: "BUYER",
+                    salt: salt,
+                });
+                return (0, response_1.SucessResponse)(data);
             }
-            return (0, response_1.SucessResponse)(input);
+            catch (error) {
+                console.log(error);
+                return (0, response_1.ErrorResponse)(500, error);
+            }
         });
     }
     UserLogin(event) {
         return __awaiter(this, void 0, void 0, function* () {
-            return (0, response_1.SucessResponse)({ message: "response from User Login" });
+            try {
+                const input = (0, class_transformer_1.plainToClass)(LoginInput_1.LoginInput, event.body);
+                const error = yield (0, errors_1.AppValidationError)(input);
+                if (error) {
+                    return (0, response_1.ErrorResponse)(404, error);
+                }
+                const data = yield this.repository.findAccount(input.email);
+                const verified = yield (0, password_1.ValidatePassword)(input.password, data.password, data.salt);
+                if (!verified) {
+                    throw new Error("password does not match");
+                }
+                const token = (0, password_1.GetToken)(data);
+                return (0, response_1.SucessResponse)({ token });
+            }
+            catch (error) {
+                console.log(error);
+                return (0, response_1.ErrorResponse)(500, error);
+            }
+        });
+    }
+    GetVerificationToken(event) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return (0, response_1.SucessResponse)({ message: "response from Verify User" });
         });
     }
     VerifyUser(event) {
