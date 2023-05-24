@@ -26,4 +26,13 @@ export class UserRepository extends DBOperation {
     }
     return result.rows[0] as UserModel;
   }
+  async updateVerificationCode(userId: string, code: number, expiry: Date) {
+    const queryString =
+      "UPDATE users SET verification_code=$1, expiry=$2 WHERE user_id =$3  RETURNING *";
+    const values = [code, expiry, userId];
+    const result = await this.executeQuery(queryString, values);
+    if (result.rowCount > 0) {
+      return result.rows[0] as UserModel;
+    }
+  }
 }

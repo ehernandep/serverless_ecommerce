@@ -84,17 +84,26 @@ let UserService = class UserService {
         return __awaiter(this, void 0, void 0, function* () {
             const token = event.headers.authorization;
             const payload = yield (0, password_1.VerifyToken)(token);
-            if (payload) {
-                const { code, expiry } = (0, notification_1.GenerateAccessCode)();
-                const response = yield (0, notification_1.SendVerificationCode)(code, payload.phone);
-                return (0, response_1.SucessResponse)({
-                    message: "verification code is sent to your registered mobile number",
-                });
-            }
+            if (!payload)
+                return (0, response_1.ErrorResponse)(403, "authorization failed !");
+            const { code, expiry } = (0, notification_1.GenerateAccessCode)();
+            yield this.repository.updateVerificationCode(payload.user_id, code, expiry);
+            return (0, response_1.SucessResponse)({
+                message: "verification code is sent to your registered mobile number",
+            });
         });
     }
     VerifyUser(event) {
         return __awaiter(this, void 0, void 0, function* () {
+            const token = event.headers.authorization;
+            const payload = yield (0, password_1.VerifyToken)(token);
+            if (!payload)
+                return (0, response_1.ErrorResponse)(403, "authorization failed !");
+            const input = (0, class_transformer_1.plainToClass)(LoginInput_1.LoginInput, event.body);
+            const error = yield (0, errors_1.AppValidationError)(input);
+            if (error) {
+                return (0, response_1.ErrorResponse)(404, error);
+            }
             return (0, response_1.SucessResponse)({ message: "response from Verify User" });
         });
     }

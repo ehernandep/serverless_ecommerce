@@ -70,18 +70,28 @@ export class UserService {
       return ErrorResponse(500, error);
     }
   }
+  
   async GetVerificationToken(event: APIGatewayProxyEventV2) {
     const token = event.headers.authorization;
     const payload = await VerifyToken(token);
-    if (payload) {
-      const { code, expiry } = GenerateAccessCode();
-      const response = await SendVerificationCode(code, payload.phone);
-      return SucessResponse({
-        message: "verification code is sent to your registered mobile number",
-      });
-    }
+    if (!payload) return ErrorResponse(403, "authorization failed !");
+    const { code, expiry } = GenerateAccessCode();
+    await this.repository.updateVerificationCode(payload.user_id, code, expiry);
+    return SucessResponse({
+      message: "verification code is sent to your registered mobile number",
+    });
   }
+
   async VerifyUser(event: APIGatewayProxyEventV2) {
+    const token = event.headers.authorization;
+    const payload = await VerifyToken(token);
+    if (!payload) return ErrorResponse(403, "authorization failed !");
+
+    const input = plainToClass(LoginInput, event.body);
+    const error = await AppValidationError(input);
+    if (error) {
+      return ErrorResponse(404, error);
+    }
     return SucessResponse({ message: "response from Verify User" });
   }
 

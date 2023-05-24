@@ -2,7 +2,7 @@ import { DBClient } from "../utility/databaseClient";
 
 export class DBOperation {
   constructor() {}
-  async executeQuery(queryString: string, values) {
+  async executeQuery(queryString: string, values:any) {
     const client = await DBClient();
     await client.connect();
     const result = await client.query(queryString, values);
