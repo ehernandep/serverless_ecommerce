@@ -28,9 +28,16 @@ const errors_1 = require("../utility/errors");
 const password_1 = require("../utility/password");
 const LoginInput_1 = require("../models/dto/LoginInput");
 const notification_1 = require("../utility/notification");
+const UpdateInput_1 = require("../models/dto/UpdateInput");
+const dateHelper_1 = require("../utility/dateHelper");
 let UserService = class UserService {
     constructor(repository) {
         this.repository = repository;
+    }
+    ResponseWithError(event) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return (0, response_1.ErrorResponse)(404, "requested method is not supported");
+        });
     }
     // User creation, validation & login
     CreateUser(event) {
@@ -84,13 +91,15 @@ let UserService = class UserService {
         return __awaiter(this, void 0, void 0, function* () {
             const token = event.headers.authorization;
             const payload = yield (0, password_1.VerifyToken)(token);
-            if (!payload)
-                return (0, response_1.ErrorResponse)(403, "authorization failed !");
-            const { code, expiry } = (0, notification_1.GenerateAccessCode)();
-            yield this.repository.updateVerificationCode(payload.user_id, code, expiry);
-            return (0, response_1.SucessResponse)({
-                message: "verification code is sent to your registered mobile number",
-            });
+            if (payload) {
+                const { code, expiry } = (0, notification_1.GenerateAccessCode)();
+                // save on DB to confirm verification
+                yield this.repository.updateVerificationCode(payload.user_id, code, expiry);
+                yield (0, notification_1.SendVerificationCode)(code, payload.phone);
+                return (0, response_1.SucessResponse)({
+                    message: "verification code is sent to your registered mobile number!",
+                });
+            }
         });
     }
     VerifyUser(event) {
@@ -99,12 +108,23 @@ let UserService = class UserService {
             const payload = yield (0, password_1.VerifyToken)(token);
             if (!payload)
                 return (0, response_1.ErrorResponse)(403, "authorization failed !");
-            const input = (0, class_transformer_1.plainToClass)(LoginInput_1.LoginInput, event.body);
+            const input = (0, class_transformer_1.plainToClass)(UpdateInput_1.VerificationInput, event.body);
             const error = yield (0, errors_1.AppValidationError)(input);
             if (error) {
                 return (0, response_1.ErrorResponse)(404, error);
             }
-            return (0, response_1.SucessResponse)({ message: "response from Verify User" });
+            const { verification_code, expiry } = yield this.repository.findAccount(payload.email);
+            if (verification_code === parseInt(input.code)) {
+                const currentTime = new Date();
+                const diff = (0, dateHelper_1.TimeDifference)(expiry, currentTime.toISOString(), "m");
+                if (diff > 0) {
+                    console.log("verified succesfully");
+                }
+                else {
+                    return (0, response_1.ErrorResponse)(403, "verification code expired");
+                }
+            }
+            return (0, response_1.SucessResponse)({ message: "User verified" });
         });
     }
     // User profile

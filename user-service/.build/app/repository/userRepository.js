@@ -27,7 +27,7 @@ class UserRepository extends dbOperation_1.DBOperation {
     }
     findAccount(email) {
         return __awaiter(this, void 0, void 0, function* () {
-            const queryString = "SELECT user_id, email, password, phone, salt FROM users WHERE email = $1";
+            const queryString = "SELECT user_id, email, password, phone, salt, verification_code, expiry FROM users WHERE email = $1";
             const values = [email];
             const result = yield this.executeQuery(queryString, values);
             if (result.rowCount < 1) {
@@ -38,7 +38,7 @@ class UserRepository extends dbOperation_1.DBOperation {
     }
     updateVerificationCode(userId, code, expiry) {
         return __awaiter(this, void 0, void 0, function* () {
-            const queryString = "UPDATE users SET verification_code=$1, expiry=$2 WHERE user_id =$3  RETURNING *";
+            const queryString = "UPDATE users SET verification_code=$1, expiry=$2 WHERE user_id=$3  RETURNING *";
             const values = [code, expiry, userId];
             const result = yield this.executeQuery(queryString, values);
             if (result.rowCount > 0) {

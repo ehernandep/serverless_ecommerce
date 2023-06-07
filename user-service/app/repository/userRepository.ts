@@ -17,7 +17,7 @@ export class UserRepository extends DBOperation {
   }
   async findAccount(email: string) {
     const queryString =
-      "SELECT user_id, email, password, phone, salt FROM users WHERE email = $1";
+      "SELECT user_id, email, password, phone, salt, verification_code, expiry FROM users WHERE email = $1";
     const values = [email];
     const result = await this.executeQuery(queryString, values);
 
@@ -28,7 +28,7 @@ export class UserRepository extends DBOperation {
   }
   async updateVerificationCode(userId: string, code: number, expiry: Date) {
     const queryString =
-      "UPDATE users SET verification_code=$1, expiry=$2 WHERE user_id =$3  RETURNING *";
+      "UPDATE users SET verification_code=$1, expiry=$2 WHERE user_id=$3  RETURNING *";
     const values = [code, expiry, userId];
     const result = await this.executeQuery(queryString, values);
     if (result.rowCount > 0) {
