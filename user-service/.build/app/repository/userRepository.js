@@ -38,12 +38,55 @@ class UserRepository extends dbOperation_1.DBOperation {
     }
     updateVerificationCode(userId, code, expiry) {
         return __awaiter(this, void 0, void 0, function* () {
-            const queryString = "UPDATE users SET verification_code=$1, expiry=$2 WHERE user_id=$3  RETURNING *";
+            const queryString = "UPDATE users SET verification_code=$1, expiry=$2 WHERE user_id=$3 AND verified=FALSE RETURNING *";
             const values = [code, expiry, userId];
             const result = yield this.executeQuery(queryString, values);
             if (result.rowCount > 0) {
                 return result.rows[0];
             }
+            throw new Error("user alredy verified!");
+        });
+    }
+    updateVerifyUser(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryString = "UPDATE users SET verified=TRUE WHERE user_id=$1 AND verified=FALSE RETURNING *";
+            const values = [userId];
+            const result = yield this.executeQuery(queryString, values);
+            if (result.rowCount > 0) {
+                return result.rows[0];
+            }
+            throw new Error("user alredy verified!");
+        });
+    }
+    updateUser(userId, firstName, lastName, userType) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const queryString = "UPDATE users SET first_name=$1, last_name=$2, user_type=$3 WHERE user_id=$4 RETURNING *";
+            const values = [firstName, lastName, userType, userId];
+            const result = yield this.executeQuery(queryString, values);
+            if (result.rowCount > 0) {
+                return result.rows[0];
+            }
+            throw new Error("error while updating user");
+        });
+    }
+    createProfile(userId, { firstName, lastName, userType, address: { addressLine1, addressLine2, city, postCode, country }, }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const updatedUser = yield this.updateUser(userId, firstName, lastName, userType);
+            const queryString = "INSERT INTO address(user_id, address_line1, address_line2, city, post_code, country) VALUES($1,$2,$3,$4,$5,$6) RETURNING *";
+            const values = [
+                userId,
+                addressLine1,
+                addressLine2,
+                city,
+                postCode,
+                country,
+            ];
+            const result = yield this.executeQuery(queryString, values);
+            if (result.rowCount > 0) {
+                result.rows[0];
+                return { updatedUser, result };
+            }
+            return true;
         });
     }
 }

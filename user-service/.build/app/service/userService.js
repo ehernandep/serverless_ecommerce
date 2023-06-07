@@ -30,6 +30,7 @@ const LoginInput_1 = require("../models/dto/LoginInput");
 const notification_1 = require("../utility/notification");
 const UpdateInput_1 = require("../models/dto/UpdateInput");
 const dateHelper_1 = require("../utility/dateHelper");
+const AddressInput_1 = require("../models/dto/AddressInput");
 let UserService = class UserService {
     constructor(repository) {
         this.repository = repository;
@@ -95,7 +96,7 @@ let UserService = class UserService {
                 const { code, expiry } = (0, notification_1.GenerateAccessCode)();
                 // save on DB to confirm verification
                 yield this.repository.updateVerificationCode(payload.user_id, code, expiry);
-                yield (0, notification_1.SendVerificationCode)(code, payload.phone);
+                //await SendVerificationCode(code, payload.phone);
                 return (0, response_1.SucessResponse)({
                     message: "verification code is sent to your registered mobile number!",
                 });
@@ -119,6 +120,7 @@ let UserService = class UserService {
                 const diff = (0, dateHelper_1.TimeDifference)(expiry, currentTime.toISOString(), "m");
                 if (diff > 0) {
                     console.log("verified succesfully");
+                    yield this.repository.updateVerifyUser(payload.user_id);
                 }
                 else {
                     return (0, response_1.ErrorResponse)(403, "verification code expired");
@@ -130,6 +132,15 @@ let UserService = class UserService {
     // User profile
     CreateProfile(event) {
         return __awaiter(this, void 0, void 0, function* () {
+            const token = event.headers.authorization;
+            const payload = yield (0, password_1.VerifyToken)(token);
+            if (!payload)
+                return (0, response_1.ErrorResponse)(403, "authorization failed !");
+            const input = (0, class_transformer_1.plainToClass)(AddressInput_1.ProfileInput, event.body);
+            const error = yield (0, errors_1.AppValidationError)(input);
+            if (error)
+                return (0, response_1.ErrorResponse)(404, error);
+            const result = yield this.repository.createProfile(payload.user_id, input);
             return (0, response_1.SucessResponse)({ message: "response from Create Profile" });
         });
     }

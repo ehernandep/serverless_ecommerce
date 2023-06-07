@@ -19,6 +19,7 @@ import {
 } from "../utility/notification";
 import { VerificationInput } from "../models/dto/UpdateInput";
 import { TimeDifference } from "../utility/dateHelper";
+import { ProfileInput } from "../models/dto/AddressInput";
 @autoInjectable()
 export class UserService {
   repository: UserRepository;
@@ -87,7 +88,7 @@ export class UserService {
         code,
         expiry
       );
-      await SendVerificationCode(code, payload.phone);
+      //await SendVerificationCode(code, payload.phone);
 
       return SucessResponse({
         message: "verification code is sent to your registered mobile number!",
@@ -113,6 +114,7 @@ export class UserService {
       const diff = TimeDifference(expiry, currentTime.toISOString(), "m");
       if (diff > 0) {
         console.log("verified succesfully");
+        await this.repository.updateVerifyUser(payload.user_id);
       } else {
         return ErrorResponse(403, "verification code expired");
       }
@@ -123,6 +125,15 @@ export class UserService {
 
   // User profile
   async CreateProfile(event: APIGatewayProxyEventV2) {
+    const token = event.headers.authorization;
+    const payload = await VerifyToken(token);
+    if (!payload) return ErrorResponse(403, "authorization failed !");
+    const input = plainToClass(ProfileInput, event.body);
+    const error = await AppValidationError(input);
+    if (error) return ErrorResponse(404, error);
+
+    const result = await this.repository.createProfile(payload.user_id, input);
+
     return SucessResponse({ message: "response from Create Profile" });
   }
 
